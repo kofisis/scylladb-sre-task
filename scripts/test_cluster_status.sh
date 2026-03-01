@@ -86,7 +86,7 @@ for i in "${!NODES[@]}"; do
   # Get count by finding the line with just whitespace and numbers
   count=$(ssh -i "$SSH_KEY" "$SSH_USER@$node" \
     "cqlsh localhost 9042 -e 'SELECT COUNT(*) FROM calldrop.call_records;' 2>&1" \
-    | awk '/^[[:space:]]+[0-9]+[[:space:]]*$/ {print $1; exit}')
+    | awk '/^[[:space:]]+[0-9]+[[:space:]]*$/ {gsub(/[^0-9]/, ""); print; exit}')
   
   if [ "$count" = "361" ]; then
     echo -e "  ${GREEN}✓${NC} Node $node: 361 records"
@@ -110,11 +110,11 @@ echo ""
 echo "[TEST 4] Analytics Query..."
 
 analytics_output=$(ssh -i "$SSH_KEY" "$SSH_USER@${NODES[0]}" \
-  "cqlsh localhost 9042 -e 'SELECT COUNT(*) FROM calldrop.call_records WHERE call_ts >= 1743638400000 AND call_ts < 1746316800000 ALLOW FILTERING;' 2>&1")
+  "cqlsh localhost 9042 -e 'SELECT COUNT(*) FROM calldrop.call_records WHERE call_ts >= 1769900400000 AND call_ts < 1772319600000 ALLOW FILTERING;' 2>&1")
 
 if echo "$analytics_output" | grep -qE '^[[:space:]]+[0-9]+'; then
   echo -e "  ${GREEN}✓${NC} Analytics query works"
-  TOTAL=$(echo "$analytics_output" | awk '/^[[:space:]]+[0-9]+[[:space:]]*$/ {print $1; exit}')
+  TOTAL=$(echo "$analytics_output" | awk '/^[[:space:]]+[0-9]+[[:space:]]*$/ {gsub(/[^0-9]/, ""); print; exit}')
   echo "     Total calls in Feb 2026: $TOTAL"
 else
   echo -e "  ${RED}✗${NC} Analytics query failed"
