@@ -1,0 +1,12 @@
+---
+- hosts: scylla_nodes
+  roles:
+    - scylla_node
+
+- hosts: client_nodes
+  roles:
+    - client_node
+
+- hosts: monitoring_node
+  roles:
+    - monitoring_node

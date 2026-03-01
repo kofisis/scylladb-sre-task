@@ -1,0 +1,12 @@
+cluster_name: 'scylla'
+listen_address: {{ private_ip }}
+rpc_address: 0.0.0.0
+broadcast_rpc_address: {{ private_ip }}
+seed_provider:
+  - class_name: org.apache.cassandra.locator.SimpleSeedProvider
+    parameters:
+      - seeds: "172.31.31.46,172.31.27.44"
+partitioner: org.apache.cassandra.dht.Murmur3Partitioner
+consistent_rangemovement: false
+num_tokens: 1
+

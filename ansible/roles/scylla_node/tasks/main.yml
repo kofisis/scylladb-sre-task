@@ -1,0 +1,48 @@
+---
+# ScyllaDB Node Tasks
+# This role configures and deploys ScyllaDB on cluster nodes
+
+- name: Install ScyllaDB
+  apt:
+    name: scylla-server
+    state: latest
+    update_cache: yes
+  become: yes
+
+- name: Configure ScyllaDB listen address
+  lineinfile:
+    path: /etc/scylla/scylla.yaml
+    regexp: "listen_address:"
+    line: "listen_address: {{ private_ip }}"
+  become: yes
+  notify: restart scylla
+
+- name: Configure ScyllaDB seed nodes
+  lineinfile:
+    path: /etc/scylla/scylla.yaml
+    regexp: "^          - seeds:"
+    line: "          - seeds: \"172.31.31.46,172.31.27.44\""
+  become: yes
+  notify: restart scylla
+
+- name: Create scylla.yaml from template
+  template:
+    src: scylla.yaml.j2
+    dest: /etc/scylla/scylla.yaml
+    backup: yes
+  become: yes
+  notify: restart scylla
+
+- name: Start ScyllaDB service
+  systemd:
+    name: scylla-server
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Wait for ScyllaDB to be ready
+  wait_for:
+    port: 9042
+    host: localhost
+    timeout: 300
+  become: yes

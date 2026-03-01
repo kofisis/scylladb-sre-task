@@ -1,0 +1,19 @@
+---
+# Client Node Tasks
+# This role sets up client machines for connecting to ScyllaDB
+
+- name: Install Python and required libraries
+  apt:
+    name:
+      - python3
+      - python3-pip
+      - python3-cassandra
+    state: latest
+    update_cache: yes
+  become: yes
+
+- name: Install cassandra-driver via pip
+  pip:
+    name: cassandra-driver
+    state: latest
+  become: yes
