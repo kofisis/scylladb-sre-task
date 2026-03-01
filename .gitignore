@@ -52,3 +52,6 @@ htmlcov/
 
 # Ansible
 inventory.backup
+
+#remove readme.md from gitignore
+*.md
