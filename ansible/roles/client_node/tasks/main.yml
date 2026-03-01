@@ -10,10 +10,10 @@
       - python3-cassandra
     state: latest
     update_cache: yes
-  become: yes
+  become: true
 
 - name: Install cassandra-driver via pip
   pip:
     name: cassandra-driver
     state: latest
-  become: yes
+  become: true

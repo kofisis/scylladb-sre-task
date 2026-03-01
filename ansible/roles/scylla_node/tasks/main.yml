@@ -7,14 +7,14 @@
     name: scylla-server
     state: latest
     update_cache: yes
-  become: yes
+  become: true
 
 - name: Configure ScyllaDB listen address
   lineinfile:
     path: /etc/scylla/scylla.yaml
     regexp: "listen_address:"
     line: "listen_address: {{ private_ip }}"
-  become: yes
+  become: true
   notify: restart scylla
 
 - name: Configure ScyllaDB seed nodes
@@ -22,7 +22,7 @@
     path: /etc/scylla/scylla.yaml
     regexp: "^          - seeds:"
     line: "          - seeds: \"172.31.31.46,172.31.27.44\""
-  become: yes
+  become: true
   notify: restart scylla
 
 - name: Create scylla.yaml from template
@@ -30,7 +30,7 @@
     src: scylla.yaml.j2
     dest: /etc/scylla/scylla.yaml
     backup: yes
-  become: yes
+  become: true
   notify: restart scylla
 
 - name: Start ScyllaDB service
@@ -38,11 +38,11 @@
     name: scylla-server
     state: started
     enabled: yes
-  become: yes
+  become: true
 
 - name: Wait for ScyllaDB to be ready
   wait_for:
     port: 9042
     host: localhost
     timeout: 300
-  become: yes
+  become: true

@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# CallDrop Cluster Status Tester (v3)
-# Pragmatic approach - tests what actually works
+# CallDrop Cluster Status Tester - Verifies the health and functionality of the CallDrop ScyllaDB cluster
 # Tests:
 #   1. SSH connectivity to all nodes
 #   2. Port 9042 (CQL) is listening

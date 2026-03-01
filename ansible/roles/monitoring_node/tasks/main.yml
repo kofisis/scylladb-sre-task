@@ -9,7 +9,7 @@
       - grafana-server
     state: latest
     update_cache: yes
-  become: yes
+  become: true
 
 - name: Start monitoring services
   systemd:

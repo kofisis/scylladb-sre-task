@@ -5,4 +5,4 @@
   systemd:
     name: scylla-server
     state: restarted
-  become: yes
+  become: true
