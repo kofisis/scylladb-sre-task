@@ -23,12 +23,18 @@ def timestamp_ms(date_str):
 
 def run_cql_query(query):
     """Execute CQL query on the cluster via SSH"""
-    ssh_cmd = f"ssh -i {SSH_KEY} {SSH_USER}@{CLUSTER_NODE}"
-    cqlsh_cmd = f"cqlsh localhost 9042 -e \"{query}\""
-    full_cmd = f"{ssh_cmd} '{cqlsh_cmd}'"
-    
     try:
-        result = subprocess.run(full_cmd, shell=True, capture_output=True, text=True, timeout=10)
+        # Build the cqlsh command to run remotely
+        remote_cmd = f"cqlsh localhost 9042 -e {repr(query)}"
+        
+        # SSH to the node and execute cqlsh
+        cmd = [
+            "ssh",
+            "-i", SSH_KEY,
+            f"{SSH_USER}@{CLUSTER_NODE}",
+            remote_cmd
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         if result.returncode != 0:
             print(f"Error: {result.stderr}")
             return None
@@ -41,30 +47,48 @@ def run_cql_query(query):
         return None
 
 
+def parse_cqlsh_count(output):
+    """Parse COUNT result from cqlsh output"""
+    if not output:
+        return 0
+    lines = [line.strip() for line in output.split('\n')]
+    # Find the line that is just a number (not header, not row count)
+    for line in lines:
+        if line.isdigit():
+            return int(line)
+    return 0
+
+
 def get_success_rate(start_date, end_date, phone=None):
     """Calculate call success rate for a date range, optionally filtered by phone"""
     
     start_ts = timestamp_ms(start_date)
     end_ts = timestamp_ms(end_date)
     
-    # Build the WHERE clause
+    # Build the base WHERE clause
     if phone:
-        where_clause = f"user_phone = '{phone}' AND call_ts >= {start_ts} AND call_ts < {end_ts}"
+        # Escape single quotes in phone number for CQL
+        phone_escaped = phone.replace("'", "''")
+        base_where = f"user_phone = '{phone_escaped}' AND call_ts >= {start_ts} AND call_ts < {end_ts}"
+        need_filtering = False
     else:
         # For queries without partition key, we need ALLOW FILTERING
-        where_clause = f"call_ts >= {start_ts} AND call_ts < {end_ts} ALLOW FILTERING"
+        base_where = f"call_ts >= {start_ts} AND call_ts < {end_ts}"
+        need_filtering = True
+    
+    # Build ALLOW FILTERING suffix
+    allow_filtering = " ALLOW FILTERING" if need_filtering else ""
     
     # Get total call count
-    total_query = f"SELECT COUNT(*) FROM calldrop.call_records WHERE {where_clause};"
+    total_query = f"SELECT COUNT(*) FROM calldrop.call_records WHERE {base_where}{allow_filtering};"
     total_output = run_cql_query(total_query)
     
     if not total_output:
         print("Failed to get total call count")
         return
     
-    # Parse the count from output (format: "count\n  value")
-    lines = total_output.split('\n')
-    total_count = int(lines[-1].strip()) if lines else 0
+    # Parse the count from cqlsh output
+    total_count = parse_cqlsh_count(total_output)
     
     if total_count == 0:
         print(f"No calls found for date range {start_date} to {end_date}")
@@ -73,15 +97,15 @@ def get_success_rate(start_date, end_date, phone=None):
         return
     
     # Get successful call count
-    success_query = f"SELECT COUNT(*) FROM calldrop.call_records WHERE {where_clause} AND call_success = true;"
+    # Note: Even with partition key specified, we need ALLOW FILTERING since call_success isn't in the primary key
+    success_query = f"SELECT COUNT(*) FROM calldrop.call_records WHERE {base_where} AND call_success = true ALLOW FILTERING;"
     success_output = run_cql_query(success_query)
     
     if not success_output:
         print("Failed to get success count")
         return
     
-    lines = success_output.split('\n')
-    success_count = int(lines[-1].strip()) if lines else 0
+    success_count = parse_cqlsh_count(success_output)
     
     # Calculate rate
     failed_count = total_count - success_count
