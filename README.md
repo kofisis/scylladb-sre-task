@@ -246,20 +246,7 @@ ssh -i ~/.ssh/id_rsa_syclla ubuntu@16.147.230.26 \
 
 ---
 
-## 📝 Next Steps
 
-### To move to Stage 3:
-1. Run all 3 tests above to verify everything works ✅
-2. Email hiring team:
-   - Subject: "CallDrop Assessment - Stage 1 & 2 Complete"
-   - Attach this README + the test output
-   - Say: "I'm ready for Stage 3 dataset"
-3. Wait for response with Stage 3 data
-4. They'll provide a loading script for larger dataset
-
-### Time estimate:
-- Testing: 5 minutes
-- Stage 3 (once they provide data): 1-2 hours
 
 ---
 
@@ -289,5 +276,3 @@ By running the 3 tests above and showing the output to the hiring team.
 ssh -i ~/.ssh/id_rsa_syclla ubuntu@16.147.230.26 'cqlsh localhost 9042 -e "SELECT COUNT(*) FROM calldrop.call_records;"'
 python3 analytics.py --start "2026-02-01" --end "2026-03-01"
 ```
-
-**Date:** March 1, 2026 | **Status:** ✅ Complete
