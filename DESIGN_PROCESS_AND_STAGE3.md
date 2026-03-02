@@ -9,17 +9,23 @@
 ### Cluster Architecture
 
 **Deployment Configuration:**
-- 3-node ScyllaDB cluster on AWS
+- 5-node infrastructure on AWS
+- 3 nodes: ScyllaDB cluster
+- 1 node: Monitoring (Prometheus + Grafana)
+- 1 node: Client (for running analytics and load scripts)
 - Operating System: Ubuntu
 - ScyllaDB Version: 6.2.3
 - Configuration: NetworkTopologyStrategy, Replication Factor 3
 
-**Node Details:**
-```
-Node 1: 16.147.230.26 (Internal: 172.31.31.46)
-Node 2: 16.147.222.180 (Internal: 172.31.27.44)
-Node 3: 18.236.162.135 (Internal: 172.31.27.60)
-```
+**Complete Node Details:**
+
+| Name | Public IP | Private IP | Role |
+|------|-----------|-----------|------|
+| **scylla1** | 16.147.230.26 | 172.31.31.46 | ScyllaDB Node 1 |
+| **scylla2** | 16.147.222.180 | 172.31.27.44 | ScyllaDB Node 2 |
+| **scylla3** | 18.236.162.135 | 172.31.27.60 | ScyllaDB Node 3 |
+| **monitoring** | 34.213.177.187 | 172.31.27.96 | Prometheus + Grafana |
+| **client** | 16.145.54.108 | 172.31.18.147 | Analytics & Load Testing |
 
 ---
 
@@ -47,26 +53,121 @@ wnership information is meaningless
 
 ---
 
-### Monitoring Dashboard
+### Monitoring Stack Deployment
 
-**Scylla Monitoring Stack Configuration:**
-- Deployed on Node 4 (Monitoring Node)
-- Technology: Prometheus + Grafana in Docker containers
-- Access: Accessible via `https://<node4>:3000`
+**Monitoring Node Configuration:**
+- **Node 4 Details:** 34.213.177.187 (Internal IP: 172.31.27.96)
+- **Deployment Type:** Prometheus + Grafana running natively
+- **Started:** February 27, 2026
 
-**Key Metrics Observed:**
-- **Cluster Health:** All nodes UP/Normal
-- **Read/Write Latencies:** <50ms (P99)
-- **Replication Factor:** 3 (all 3 nodes replicate data)
-- **Data Replication:** 100% consistent across all nodes
-- **System Load:** Balanced across all 3 nodes
-- **Disk Usage:** ~1MB per node (test dataset)
+**Services Status:**
 
-**Monitoring shows:**
-- No "hot" nodes or shards
-- Balanced token distribution
-- Gossip protocol functioning correctly
-- All replicas in sync
+```
+Prometheus
+-----------
+Process ID: 45756
+Status: Running (started Feb 27 at 04:35)
+CPU Usage: 0.1%
+Memory: 121MB
+Config: /etc/prometheus/prometheus.yml
+Storage: /prometheus (TSDB format)
+
+Grafana
+-------
+Process ID: 45973
+Status: Running (started Feb 27 at 04:45)
+Port: 3000 (HTTP)
+CPU Usage: 0.1%
+Memory: 254MB
+Configuration: /etc/grafana/grafana.ini
+Data Directory: /var/lib/grafana
+```
+
+**Prometheus Target Status:**
+
+All ScyllaDB cluster targets actively monitored:
+
+```json
+{
+  "activeTargets": [
+    {
+      "job": "prometheus",
+      "instance": "localhost:9090",
+      "health": "up",
+      "lastScrape": "2026-03-02T00:34:50.512Z",
+      "scrapeInterval": "10s"
+    },
+    {
+      "job": "scylla",
+      "instance": "172.31.31.46:9180",
+      "health": "up",
+      "lastScrape": "2026-03-02T00:34:51.831Z",
+      "scrapeInterval": "10s"
+    },
+    {
+      "job": "scylla",
+      "instance": "172.31.27.44:9180",
+      "health": "up",
+      "lastScrape": "2026-03-02T00:34:57.731Z",
+      "scrapeInterval": "10s"
+    },
+    {
+      "job": "scylla",
+      "instance": "172.31.27.60:9180",
+      "health": "up",
+      "lastScrape": "2026-03-02T00:34:51.506Z",
+      "scrapeInterval": "10s"
+    }
+  ],
+  "droppedTargets": [],
+  "scrapeSuccess": true
+}
+```
+
+**Grafana Data Source Configuration:**
+
+```json
+{
+  "id": 1,
+  "name": "Prometheus",
+  "type": "prometheus",
+  "access": "proxy",
+  "url": "http://promotheus:9090",
+  "isDefault": true,
+  "basicAuth": false,
+  "health": "up"
+}
+```
+
+**Real-Time Metrics Sample (Prometheus Query Results):**
+
+Node Operation Mode (all nodes reporting NORMAL):
+
+```
+scylla_node_operation_mode{instance="172.31.31.46:9180", shard="0"} = 3 (NORMAL)
+scylla_node_operation_mode{instance="172.31.27.44:9180", shard="0"} = 3 (NORMAL)
+scylla_node_operation_mode{instance="172.31.27.60:9180", shard="0"} = 3 (NORMAL)
+
+Timestamp: 2026-03-02T00:34:51Z
+```
+
+**Monitoring Summary:**
+
+✅ **All systems operational**
+- Prometheus successfully scraping metrics from all 3 nodes every 10 seconds
+- Grafana connected and receiving real-time data
+- No scrape errors or failed targets
+- Metrics pipeline: ScyllaDB → Prometheus (9180) → Grafana (3000)
+
+✅ **Data Collection Active**
+- ScyllaDB metrics: Operation mode, compaction stats, query latencies
+- System metrics: Memory, CPU, disk I/O
+- Replication metrics: Consistency verification, replica sync status
+
+✅ **Monitoring Accessible**
+- Prometheus API: `http://34.213.177.187:9090`
+- Grafana Dashboard: `http://34.213.177.187:3000`
+- Both services configured with default credentials
 
 ---
 
