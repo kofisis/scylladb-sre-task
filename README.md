@@ -264,9 +264,6 @@ A Python script that asks the cluster questions like:
 ### Data
 361 sample call records representing 15 users making 20-25 calls each with realistic success rates.
 
-### Task = Prove all this works
-By running the 3 tests above and showing the output to the hiring team.
-
 ---
 
 **Ready to test? Run these 3 commands and you're done!**
