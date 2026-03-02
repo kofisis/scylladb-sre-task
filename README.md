@@ -4,7 +4,7 @@
 
 ---
 
-## 📋 What You Have
+## 📋 What has been completed
 
 A **3-node ScyllaDB cluster** with:
 - ✅ Cluster operational (all nodes UP/Normal)
